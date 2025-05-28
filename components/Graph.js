@@ -39,6 +39,13 @@ const chartConfig = {
 };
 
 const Graph = () => {
+  useEffect(() => {
+    const ws = new WebSocket('ws://YOUR_COMPUTER_IP:8082');
+    ws.onmessage = (event) => {
+      console.log('Received from server:', event.data);
+    };
+    return () => ws.close();
+  }, []);
   return (
     <View style={styles.graphContainer}>
       <LineChart
