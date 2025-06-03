@@ -39,3 +39,9 @@ export const closeWebSocket = () => {
     listeners = [];
   }
 };
+
+export const sendMessage = (message) => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(message);
+  }
+};
