@@ -10,7 +10,7 @@ import ControlPanel from './components/ControlPanel';
 
 // NEW IMPORTS FOR BLE
 import { DataProvider, useData } from './contexts/DataContext';
-import { bleService } from './services/BleService';
+import { bleService } from './services/BLEservice';
 
 // This is the main application component that orchestrates everything
 function AppContent() { // Renamed to AppContent as App will be a wrapper
