@@ -4,47 +4,55 @@ import { Animated, Dimensions, Easing, StyleSheet, View, Text, TouchableOpacity 
 const { width } = Dimensions.get('window');
 const circleSize = width / 3;
 
-const Home = () => {
+const Home = ({ visible }) => {
   const move = useRef(new Animated.Value(0)).current;
   const breathIn = Easing.out(Easing.sin);
   const breathOut = Easing.in(Easing.sin);
   const [timer, setTimer] = useState(60);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(true); // Start paused
   const countdown = useRef(null);
   const animationLoop = useRef(null);
 
+  // Reset everything and start when visible becomes true
   useEffect(() => {
-    startAnimation();
-    startTimer();
-
+    if (visible) {
+      handleReset();
+      setIsPaused(false); // Start animation/timer
+    } else {
+      setIsPaused(true); // Pause animation/timer
+      clearInterval(countdown.current);
+      move.stopAnimation(() => move.setValue(0));
+    }
+    // Cleanup on unmount
     return () => {
       clearInterval(countdown.current);
       move.stopAnimation();
     };
-  }, []);
+  }, [visible]);
 
+  // Start or stop animation/timer based on isPaused
   useEffect(() => {
-    if (isPaused) {
-      clearInterval(countdown.current);
-      move.stopAnimation();
-    } else {
+    if (!isPaused && visible) {
       startTimer();
       startAnimation();
+    } else {
+      clearInterval(countdown.current);
+      move.stopAnimation();
     }
-  }, [isPaused]);
+  }, [isPaused, visible]);
 
   const startAnimation = () => {
     animationLoop.current = Animated.loop(
       Animated.sequence([
         Animated.timing(move, {
           toValue: 1,
-          duration: 7000, // 7 seconds for breath in
+          duration: 7000,
           easing: breathIn,
           useNativeDriver: true,
         }),
         Animated.timing(move, {
           toValue: 2,
-          duration: 7000, // 7 seconds for breath out
+          duration: 7000,
           easing: breathOut,
           useNativeDriver: true,
         }),
@@ -59,7 +67,7 @@ const Home = () => {
   };
 
   const startTimer = () => {
-    clearInterval(countdown.current); // Clear any existing interval
+    clearInterval(countdown.current);
     countdown.current = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : prev));
     }, 1000);
@@ -67,12 +75,9 @@ const Home = () => {
 
   const handleReset = () => {
     setTimer(60);
-    setIsPaused(false);
     clearInterval(countdown.current);
     move.stopAnimation(() => {
-      move.setValue(0); // Reset the animation to its start position
-      startTimer();
-      startAnimation();
+      move.setValue(0);
     });
   };
 
@@ -87,82 +92,88 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.leftContainer}>
-        <View style={styles.circlesContainer}>
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((item) => {
-            const rotation = move.interpolate({
-              inputRange: [0, 1, 2],
-              outputRange: [
-                `${item * 45}deg`,
-                `${item * 45 + 180}deg`,
-                `${item * 45 + 360}deg`,
-              ],
-            });
-            return (
-              <View
-                key={item}
+      {visible && (
+        <>
+          <View style={styles.leftContainer}>
+            <View style={styles.circlesContainer}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((item) => {
+                const rotation = move.interpolate({
+                  inputRange: [0, 1, 2],
+                  outputRange: [
+                    `${item * 45}deg`,
+                    `${item * 45 + 180}deg`,
+                    `${item * 45 + 360}deg`,
+                  ],
+                });
+                return (
+                  <View
+                    key={item}
+                    style={{
+                      ...StyleSheet.absoluteFill,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Animated.View
+                      style={{
+                        opacity: 0.15,
+                        backgroundColor: '#d600d3',
+                        width: circleSize,
+                        height: circleSize,
+                        borderRadius: circleSize / 2,
+                        transform: [
+                          {
+                            rotateZ: rotation,
+                          },
+                          { translateX: translate },
+                          { translateY: translate },
+                        ],
+                      }}
+                    />
+                  </View>
+                );
+              })}
+              <Animated.View
                 style={{
-                  ...StyleSheet.absoluteFill,
+                  position: 'absolute',
                   alignItems: 'center',
                   justifyContent: 'center',
-                }}>
-                <Animated.View
-                  style={{
-                    opacity: 0.15,
-                    backgroundColor: '#d600d3',
-                    width: circleSize,
-                    height: circleSize,
-                    borderRadius: circleSize / 2,
-                    transform: [
-                      {
-                        rotateZ: rotation,
-                      },
-                      { translateX: translate },
-                      { translateY: translate },
-                    ],
-                  }}
-                />
-              </View>
-            );
-          })}
-          <Animated.View
-            style={{
-              position: 'absolute',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: move.interpolate({
-                inputRange: [0, 1, 1.5, 2],
-                outputRange: [1, 1, 0, 0],
-              }),
-            }}
-          >
-            <Text style={styles.text}>Inhale</Text>
-          </Animated.View>
-          <Animated.View
-            style={{
-              position: 'absolute',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: move.interpolate({
-                inputRange: [0, 1, 1.5, 2],
-                outputRange: [0, 0, 1, 1],
-              }),
-            }}
-          >
-            <Text style={styles.text}>Exhale</Text>
-          </Animated.View>
-        </View>
-      </View>
-      <View style={styles.rightContainer}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handleReset} style={styles.button}>
-            <Text style={styles.buttonText}>Restart</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handlePause} style={styles.button}>
-            <Text style={styles.buttonText}>{isPaused ? "Measure" : "Stop"}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+                  opacity: move.interpolate({
+                    inputRange: [0, 1, 1.5, 2],
+                    outputRange: [1, 1, 0, 0],
+                  }),
+                }}
+              >
+                <Text style={styles.text}>Inhale</Text>
+              </Animated.View>
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: move.interpolate({
+                    inputRange: [0, 1, 1.5, 2],
+                    outputRange: [0, 0, 1, 1],
+                  }),
+                }}
+              >
+                <Text style={styles.text}>Exhale</Text>
+              </Animated.View>
+            </View>
+          </View>
+          {/* Uncomment if you want pause/reset buttons:
+          <View style={styles.rightContainer}>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity onPress={handleReset} style={styles.button}>
+                <Text style={styles.buttonText}>Restart</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handlePause} style={styles.button}>
+                <Text style={styles.buttonText}>{isPaused ? "Measure" : "Stop"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          */}
+        </>
+      )}
     </View>
   );
 };
