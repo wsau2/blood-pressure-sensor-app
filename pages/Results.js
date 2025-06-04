@@ -4,18 +4,8 @@ import BloodPressureDisplay from '../components/BloodPressureDisplay';
 import Graph from '../components/Graph';
 import Statistics from '../components/Statistics';
 import Header from '../components/header';
-import { DataContext } from '../contexts/DataContext';
 
-import {
-  connectWebSocket,
-  addMessageListener,
-  removeMessageListener,
-  closeWebSocket,
-} from '../components/webSocketService.js'
-import ControlPanel from '../components/ControlPanel.js';
-
-const Results = ({ onStatusChange, onAdcValue, isRecording }) => {
-  const [dataPoints, setDataPoints] = useState([]);
+const Results = () => {
 
 
   const date = 'Mon, Aug 23';
@@ -26,46 +16,13 @@ const Results = ({ onStatusChange, onAdcValue, isRecording }) => {
   const maxBpm = 180;
   
 
-  useEffect(() => {
-      connectWebSocket();
-  
-      const handleMessage = (data) => {
-        
-        const match = data.match(/ADC:\s*(\d+)/);
-        const adcValue = match ? parseInt(match[1], 10) : null;
-
-        const matchStatus = data.match(/Status:\s*([A-Za-z]+)/);
-        const status = matchStatus ? matchStatus[1] : null;
-
-        if (status && onStatusChange) {
-          onStatusChange(status);
-        }        
-  
-        if (adcValue !== null) {
-          setDataPoints((prev) => {
-            const updated = [...prev, adcValue];
-            return updated.slice(-100); // Keep only the last 1000 points ~10 seconds
-          });
-          onAdcValue(adcValue); // Pass ADC value up to App.js
-        }
-      };
-  
-      addMessageListener(handleMessage);
-  
-      return () => {
-        removeMessageListener(handleMessage);
-        // closeWebSocket(); // Optional: uncomment if you want to fully close it on unmount
-      };
-    }, [onAdcValue]);
 
   return (
     <View style={styles.container}>
       <Header date={date} />
-      <DataContext.Provider value={{ dataPoints, setDataPoints }}>
         <BloodPressureDisplay systolic={systolic} diastolic={diastolic} />
         <Graph />
         <Statistics avg={avgBpm} min={minBpm} max={maxBpm} />
-      </DataContext.Provider> 
       {/* <ControlPanel/> */}
     </View>
   );
