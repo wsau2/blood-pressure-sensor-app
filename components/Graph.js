@@ -49,13 +49,32 @@ const Graph = () => {
   }, [adcValue]);
 
 
-  let labels = Array(dataPoints.length).fill("");
-if (elapsedPoints.length > 0) {
+  // let labels = Array(dataPoints.length).fill("");
+  // if (elapsedPoints.length > 0) {
+  //   const n = elapsedPoints.length;
+  //   labels[0] = (elapsedPoints[0] / 1000).toFixed(1);
+  //   labels[Math.floor(n / 2)] = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
+  //   labels[n - 1] = (elapsedPoints[n - 1] / 1000).toFixed(1);
+  // }
+
+  // let labels = [];
+  // if (elapsedPoints.length > 0) {
+  //   const n = elapsedPoints.length;
+  //   const first = (elapsedPoints[0] / 1000).toFixed(1);
+  //   const middle = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
+  //   const last = (elapsedPoints[n - 1] / 1000).toFixed(1);
+  //   labels = [first, middle, last];
+  // }
+
+  // let labels = [];
   const n = elapsedPoints.length;
-  labels[0] = (elapsedPoints[0] / 1000).toFixed(1);
-  labels[Math.floor(n / 2)] = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
-  labels[n - 5] = (elapsedPoints[n - 1] / 1000).toFixed(1);
-}
+  let labels = new Array(n)
+  if (n > 0) {
+    // labels = Array(n).fill("");
+    labels[0] = (elapsedPoints[0] / 1000).toFixed(1);
+    labels[Math.floor(n / 2)] = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
+    labels[n - 5] = (elapsedPoints[n - 1] / 1000).toFixed(1);
+  }
 
 
   
