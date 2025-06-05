@@ -12,8 +12,8 @@ import {
 import { DataContext } from './contexts/DataContext';
 
 export default function App() {
-  const [dataPoints, setDataPoints] = useState([]);
   const [adcBuffer, setAdcBuffer] = useState([]);
+  const [adcValue, setAdcValue] = useState(null);
 
   const [recording, setRecording] = useState(false);
   const [waitingForStalled, setWaitingForStalled] = useState(false);
@@ -25,6 +25,8 @@ export default function App() {
 
   // Elapsed Time
   const [elapsed, setElapsed] = useState(0)
+
+  const bufferRef = useRef(''); // <-- Add a buffer ref
 
   useEffect(() => {
     recordingRef.current = recording;
@@ -38,50 +40,50 @@ export default function App() {
     connectWebSocket();
 
     const handleMessage = (data) => {
-      const adcMatch = data.match(/ADC:\s*(\d+)/);
-      const statusMatch = data.match(/Status:\s*([A-Za-z]+)/);
-      const elapsedMatch = data.match(/Elapsed:\s*(\d+)ms/);
+      bufferRef.current += data;
 
+      // Regex to match a complete message: ADC: ... | Elapsed: ...ms | Status: ...
+      const messageRegex = /ADC:\s*(-?\d+)\s*\|\s*Elapsed:\s*(\d+)ms\s*\|\s*Status:\s*([A-Za-z]+)/g;
+      let match;
+      let lastIndex = 0;
 
-      const adcValue = adcMatch ? parseInt(adcMatch[1], 10) : null;
-      const status = statusMatch ? statusMatch[1] : null;
-      if (elapsedMatch) { setElapsed(elapsedMatch[1])}
+      while ((match = messageRegex.exec(bufferRef.current)) !== null) {
+        const currAdcValue = parseInt(match[1], 10);
+        const currElapsed = match[2];
+        const status = match[3];
 
-      // Update chart with recent 100 values
-      if (adcValue !== null) {
-        setDataPoints((prev) => {
-          const updated = [...prev, adcValue];
-          return updated.slice(-100);
-        });
+        setAdcValue(currAdcValue);
+        setElapsed(currElapsed);
 
-        // Record if currently recording
+      
+
+        // If recording in progress, record non-null adc values in adcBuffer
         if (recordingRef.current) {
-          setAdcBuffer((prev) => [...prev, adcValue]);
+          setAdcBuffer((prev) => [...prev, currAdcValue]);
         }
-      }
 
-      // Handle STALLED → start recording
-      if (waitingForStalledRef.current && status === 'STALLED') {
-        console.log('STALLED received, start recording');
-        setWaitingForStalled(false);
-        setRecording(true);
-        setAdcBuffer([]);
-      }
-
-      // Handle IDLE → stop recording and show result
-      if (recordingRef.current && status === 'IDLE') {
-        console.log('IDLE received, stop recording');
-        setRecording(false);
-        recordingRef.current = false
-        setShowHome(false);
-        if (adcBuffer.length > 0) {
-          console.log('ADC Buffer:', adcBuffer);
+        // Handle STALLED → start recording
+        if (waitingForStalledRef.current && status === 'STALLED') {
+          setWaitingForStalled(false);
+          setRecording(true);
+          setAdcBuffer([]);
         }
+
+        // Handle IDLE → stop recording and show result
+        if (recordingRef.current && status === 'IDLE') {
+          setRecording(false);
+          recordingRef.current = false;
+          setShowHome(false);
+          if (adcBuffer.length > 0) {
+            console.log('ADC Buffer:', adcBuffer);
+          }
+        }
+
+        lastIndex = messageRegex.lastIndex;
       }
 
-      // if (showHome && status) {
-      //   console.log('Status:', status);
-      // }
+      // Remove processed messages from buffer, keep incomplete part
+      bufferRef.current = bufferRef.current.slice(lastIndex);
     };
 
     addMessageListener(handleMessage);
@@ -102,7 +104,7 @@ export default function App() {
   };
 
   return (
-    <DataContext.Provider value={{ dataPoints, adcBuffer, recording, elapsed }}>
+    <DataContext.Provider value={{ adcValue, adcBuffer, recording, elapsed }}>
       <SafeAreaView style={styles.container}>
         <Results />
         <ControlPanel onButtonPress={handleControlPanelPress} />
