@@ -6,7 +6,6 @@ import Statistics from '../components/Statistics';
 import Header from '../components/header';
 
 const Results = () => {
-  console.log("result renders")
 
 
   const date = 'Mon, Aug 23';

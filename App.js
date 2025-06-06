@@ -14,27 +14,13 @@ import { DataContext } from './contexts/DataContext';
 export default function App() {
   console.log("app renders")
 
-  
-  const [recording, setRecording] = useState(false);
-  const [waitingForStalled, setWaitingForStalled] = useState(false);
+  const recording = useRef(false);
+  const waitingForStalled = useRef(false);
   const [showHome, setShowHome] = useState(false);
-
-  // Track current values in .current to avoid stale closures
-  const recordingRef = useRef(recording);
-  const waitingForStalledRef = useRef(waitingForStalled);
-
   const adcValueRef = useRef(null);
   const elapsedRef = useRef(null)
   const adcRecordingsRef = useRef([])
   const adcBufferRef = useRef('');
-
-  useEffect(() => {
-    recordingRef.current = recording;
-  }, [recording]);
-
-  useEffect(() => {
-    waitingForStalledRef.current = waitingForStalled;
-  }, [waitingForStalled]);
 
   useEffect(() => {
     connectWebSocket();
@@ -52,30 +38,25 @@ export default function App() {
         elapsedRef.current = match[2];
         const status = match[3];
 
-        // adcValueRef.current = currAdcValue;
-        // elapsedRef.current = currElapsed
-
-        // console.log(adcValueRef.current)
-
         // If recording in progress, record non-null adc values in adcBuffer
-        if (recordingRef.current) {
+        if (recording.current) {
           adcRecordingsRef.current.push(adcValueRef.current)
         }
 
         // Handle STALLED → start recording
-        if (waitingForStalledRef.current && status === 'STALLED') {
+        if (waitingForStalled.current && status === 'STALLED') {
           console.log("Stalled -- start recording")
-          setWaitingForStalled(false);
-          setRecording(true);
+          waitingForStalled.current = false;
+          recording.current = true;
           adcRecordingsRef.current = []
         }
 
         // Handle IDLE → stop recording and show result
-        if (recordingRef.current && status === 'IDLE') {
+        if (recording.current && status === 'IDLE') {
           console.log("IDLE -- stop recording")
-          setRecording(false);
-          recordingRef.current = false;
-          setShowHome(false);
+          recording.current = false;
+          recording.current = false;
+          setShowHome(false)
           if (adcRecordingsRef.current.length > 0) {
             console.log('ADC Buffer:', adcRecordingsRef.current);
           }
@@ -98,21 +79,12 @@ export default function App() {
   const handleControlPanelPress = (key) => {
     if (key === 'j') {
       console.log('Waiting for STALLED status...');
-      setShowHome(true);
-      setWaitingForStalled(true);
-      setRecording(false);
+      setShowHome(true)
+      waitingForStalled.current = true;
+      recording.current = false;
       adcRecordingsRef.current = []
     }
   };
-
-
-  // const value = React.useMemo(() => ({
-  //   adcValueRef,
-  //   elapsedRef,
-  //   recording,
-  //   adcRecordingsRef
-  // }), [adcValueRef, elapsedRef, recording, adcRecordingsRef]);
-
 
   return (
     <DataContext.Provider value={{adcValueRef, elapsedRef, recording, adcRecordingsRef}}>
