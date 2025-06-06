@@ -26,7 +26,7 @@ export default function App() {
   const adcValueRef = useRef(null);
   const elapsedRef = useRef(null)
   const adcRecordingsRef = useRef([])
-  const adcBufferRef = useRef(''); // <-- Add a buffer ref
+  const adcBufferRef = useRef('');
 
   useEffect(() => {
     recordingRef.current = recording;
@@ -48,22 +48,23 @@ export default function App() {
       let lastIndex = 0;
 
       while ((match = messageRegex.exec(adcBufferRef.current)) !== null) {
-        const currAdcValue = parseInt(match[1], 10);
-        const currElapsed = match[2];
+        adcValueRef.current = parseInt(match[1], 10);
+        elapsedRef.current = match[2];
         const status = match[3];
 
-        adcValueRef.current = currAdcValue;
-        elapsedRef.current = currElapsed
+        // adcValueRef.current = currAdcValue;
+        // elapsedRef.current = currElapsed
 
         // console.log(adcValueRef.current)
 
         // If recording in progress, record non-null adc values in adcBuffer
         if (recordingRef.current) {
-          adcRecordingsRef.current = [...adcRecordingsRef.current, adcValueRef.current]
+          adcRecordingsRef.current.push(adcValueRef.current)
         }
 
         // Handle STALLED → start recording
         if (waitingForStalledRef.current && status === 'STALLED') {
+          console.log("Stalled -- start recording")
           setWaitingForStalled(false);
           setRecording(true);
           adcRecordingsRef.current = []
@@ -71,11 +72,12 @@ export default function App() {
 
         // Handle IDLE → stop recording and show result
         if (recordingRef.current && status === 'IDLE') {
+          console.log("IDLE -- stop recording")
           setRecording(false);
           recordingRef.current = false;
           setShowHome(false);
-          if (adcRecordingsRef.length > 0) {
-            console.log('ADC Buffer:', adcRecordingsRef);
+          if (adcRecordingsRef.current.length > 0) {
+            console.log('ADC Buffer:', adcRecordingsRef.current);
           }
         }
 
