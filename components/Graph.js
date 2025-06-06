@@ -21,60 +21,53 @@ const chartConfig = {
 };
 
 const Graph = () => {
-  const { adcValue, elapsed } = useContext(DataContext);
-  // console.log("graph render", dataPoints.length)
+  const { adcValueRef, elapsedRef } = useContext(DataContext);
+
   const  [selected, setSelected] = useState("")
   const  [dataPoints, setDataPoints] = useState([])
-  const  [elapsedPoints, setElapsedPoints] = useState([])
+  const  [elapsedRefPoints, setElapsedPoints] = useState([])
 
   const counterRef = useRef(0)
+
+  useEffect(() => {
+    setDataPoints(Array(100).fill(0));
+  }, []);
   
 
   useEffect(() => {
-    const freq = parseInt(selected) || 1; // Default to 1 if not selected
+    const interval = setInterval(() => {
+      const adcValue = adcValueRef.current;
+      const elapsed = elapsedRef.current;
+      const freq = parseInt(selected) || 1;
 
-
-    if (
-      adcValue !== undefined &&
-      adcValue !== null &&
-      elapsed !== undefined &&
-      elapsed !== null
-    ) {
-      if (counterRef.current === 0) {
-        setDataPoints(prev => [...prev, adcValue].slice(-100));
-        setElapsedPoints(prev => [...prev, elapsed].slice(-100));
+      if (
+        adcValue !== undefined &&
+        adcValue !== null &&
+        elapsed !== undefined &&
+        elapsed !== null
+      ) {
+        if (counterRef.current === 0) {
+          setDataPoints(prev => [...prev, adcValue].slice(-100));
+          setElapsedPoints(prev => [...prev, elapsed].slice(-100));
+        }
+        counterRef.current = (counterRef.current + 1) % freq;
       }
-      counterRef.current = (counterRef.current + 1) % freq;
-    }
-  }, [adcValue]);
+    }, 50); // Check every 100ms (or whatever resolution you need)
+
+    return () => clearInterval(interval);
+  }, [selected]); // Rerun if dropdown frequency changes
 
 
-  // let labels = Array(dataPoints.length).fill("");
-  // if (elapsedPoints.length > 0) {
-  //   const n = elapsedPoints.length;
-  //   labels[0] = (elapsedPoints[0] / 1000).toFixed(1);
-  //   labels[Math.floor(n / 2)] = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
-  //   labels[n - 1] = (elapsedPoints[n - 1] / 1000).toFixed(1);
-  // }
 
   // let labels = [];
-  // if (elapsedPoints.length > 0) {
-  //   const n = elapsedPoints.length;
-  //   const first = (elapsedPoints[0] / 1000).toFixed(1);
-  //   const middle = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
-  //   const last = (elapsedPoints[n - 1] / 1000).toFixed(1);
-  //   labels = [first, middle, last];
+  // const n = elapsedRefPoints.length;
+  // let labels = new Array(n)
+  // if (n > 0) {
+  //   // labels = Array(n).fill("");
+  //   labels[0] = (elapsedRefPoints[0] / 1000).toFixed(1);
+  //   labels[Math.floor(n / 2)] = (elapsedRefPoints[Math.floor(n / 2)] / 1000).toFixed(1);
+  //   labels[n - 5] = (elapsedRefPoints[n - 1] / 1000).toFixed(1);
   // }
-
-  // let labels = [];
-  const n = elapsedPoints.length;
-  let labels = new Array(n)
-  if (n > 0) {
-    // labels = Array(n).fill("");
-    labels[0] = (elapsedPoints[0] / 1000).toFixed(1);
-    labels[Math.floor(n / 2)] = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
-    labels[n - 5] = (elapsedPoints[n - 1] / 1000).toFixed(1);
-  }
 
 
   
@@ -93,7 +86,7 @@ const Graph = () => {
       />
       <LineChart
         data={{
-          labels:labels,
+          // labels:labels,
           datasets: [
             {
               data: dataPoints,

@@ -12,9 +12,9 @@ import {
 import { DataContext } from './contexts/DataContext';
 
 export default function App() {
-  const [adcBuffer, setAdcBuffer] = useState([]);
-  const [adcValue, setAdcValue] = useState(null);
+  console.log("app renders")
 
+  
   const [recording, setRecording] = useState(false);
   const [waitingForStalled, setWaitingForStalled] = useState(false);
   const [showHome, setShowHome] = useState(false);
@@ -23,10 +23,10 @@ export default function App() {
   const recordingRef = useRef(recording);
   const waitingForStalledRef = useRef(waitingForStalled);
 
-  // Elapsed Time
-  const [elapsed, setElapsed] = useState(0)
-
-  const bufferRef = useRef(''); // <-- Add a buffer ref
+  const adcValueRef = useRef(null);
+  const elapsedRef = useRef(null)
+  const adcRecordingsRef = useRef([])
+  const adcBufferRef = useRef(''); // <-- Add a buffer ref
 
   useEffect(() => {
     recordingRef.current = recording;
@@ -40,33 +40,33 @@ export default function App() {
     connectWebSocket();
 
     const handleMessage = (data) => {
-      bufferRef.current += data;
+      adcBufferRef.current += data;
 
       // Regex to match a complete message: ADC: ... | Elapsed: ...ms | Status: ...
       const messageRegex = /ADC:\s*(-?\d+)\s*\|\s*Elapsed:\s*(\d+)ms\s*\|\s*Status:\s*([A-Za-z]+)/g;
       let match;
       let lastIndex = 0;
 
-      while ((match = messageRegex.exec(bufferRef.current)) !== null) {
+      while ((match = messageRegex.exec(adcBufferRef.current)) !== null) {
         const currAdcValue = parseInt(match[1], 10);
         const currElapsed = match[2];
         const status = match[3];
 
-        setAdcValue(currAdcValue);
-        setElapsed(currElapsed);
+        adcValueRef.current = currAdcValue;
+        elapsedRef.current = currElapsed
 
-      
+        // console.log(adcValueRef.current)
 
         // If recording in progress, record non-null adc values in adcBuffer
         if (recordingRef.current) {
-          setAdcBuffer((prev) => [...prev, currAdcValue]);
+          adcRecordingsRef.current = [...adcRecordingsRef.current, adcValueRef.current]
         }
 
         // Handle STALLED → start recording
         if (waitingForStalledRef.current && status === 'STALLED') {
           setWaitingForStalled(false);
           setRecording(true);
-          setAdcBuffer([]);
+          adcRecordingsRef.current = []
         }
 
         // Handle IDLE → stop recording and show result
@@ -74,8 +74,8 @@ export default function App() {
           setRecording(false);
           recordingRef.current = false;
           setShowHome(false);
-          if (adcBuffer.length > 0) {
-            console.log('ADC Buffer:', adcBuffer);
+          if (adcRecordingsRef.length > 0) {
+            console.log('ADC Buffer:', adcRecordingsRef);
           }
         }
 
@@ -83,7 +83,7 @@ export default function App() {
       }
 
       // Remove processed messages from buffer, keep incomplete part
-      bufferRef.current = bufferRef.current.slice(lastIndex);
+      adcBufferRef.current = adcBufferRef.current.slice(lastIndex);
     };
 
     addMessageListener(handleMessage);
@@ -91,7 +91,7 @@ export default function App() {
     return () => {
       removeMessageListener(handleMessage);
     };
-  }, [showHome, adcBuffer]);
+  }, [showHome, adcRecordingsRef]);
 
   const handleControlPanelPress = (key) => {
     if (key === 'j') {
@@ -99,12 +99,21 @@ export default function App() {
       setShowHome(true);
       setWaitingForStalled(true);
       setRecording(false);
-      setAdcBuffer([]);
+      adcRecordingsRef.current = []
     }
   };
 
+
+  // const value = React.useMemo(() => ({
+  //   adcValueRef,
+  //   elapsedRef,
+  //   recording,
+  //   adcRecordingsRef
+  // }), [adcValueRef, elapsedRef, recording, adcRecordingsRef]);
+
+
   return (
-    <DataContext.Provider value={{ adcValue, adcBuffer, recording, elapsed }}>
+    <DataContext.Provider value={{adcValueRef, elapsedRef, recording, adcRecordingsRef}}>
       <SafeAreaView style={styles.container}>
         <Results />
         <ControlPanel onButtonPress={handleControlPanelPress} />
