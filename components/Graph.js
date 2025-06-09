@@ -33,8 +33,9 @@ const Graph = () => {
   }, []);
   
 
-  // Refreshes the graph on a fixed time interval. 
-  // Rerun if dropdown changes
+  // Stores buffer of 100 points for the graph
+  // Adds a point to that buffer on a fixed time interval
+  // based on the dropdown selected
   useEffect(() => {
     const interval = setInterval(() => {
       const adcValue = adcValueRef.current;
@@ -49,7 +50,7 @@ const Graph = () => {
         setDataPoints(prev => [...prev, adcValue].slice(-100));
         setElapsedPoints(prev => [...prev, elapsed].slice(-100));
       }
-    }, 50); 
+    }, selected); 
 
     return () => clearInterval(interval);
   }, [selected]); 
@@ -69,9 +70,9 @@ const Graph = () => {
 
   
   const data = [
-    {key:'1', value:'1'},
-    {key:'2', value:'5'},
-    {key:'3', value:'10'}
+    {key:'1', value:'10'},
+    {key:'2', value:'50'},
+    {key:'3', value:'100'}
   ]
 
   return (
