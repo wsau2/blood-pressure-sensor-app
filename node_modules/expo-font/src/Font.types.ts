@@ -68,6 +68,5 @@ export enum FontDisplay {
 // @needsAudit
 /**
  * Object used to query fonts for unloading.
- * @hidden
  */
 export type UnloadFontOptions = Pick<FontResource, 'display'>;
