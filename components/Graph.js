@@ -27,16 +27,20 @@ const Graph = () => {
   const  [dataPoints, setDataPoints] = useState([])
   const  [elapsedRefPoints, setElapsedPoints] = useState([])
 
+  // console.log("graph render")
+
+  const bigBuffer = useRef([]);
+  const [smallBuffer, setSmallBuffer] = useState([]);
+
 
   useEffect(() => {
     setDataPoints(Array(100).fill(0));
   }, []);
   
 
-  // Stores buffer of 100 points for the graph
-  // Adds a point to that buffer on a fixed time interval
-  // based on the dropdown selected
+  // Every 100 ms, receives an adc from App and adds it to the big buffer
   useEffect(() => {
+    console.log("graph set to ", selected)
     const interval = setInterval(() => {
       const adcValue = adcValueRef.current;
       const elapsed = elapsedRef.current;
@@ -47,10 +51,14 @@ const Graph = () => {
         elapsed !== undefined &&
         elapsed !== null
       ) {
-        setDataPoints(prev => [...prev, adcValue].slice(-100));
-        setElapsedPoints(prev => [...prev, elapsed].slice(-100));
+        // setDataPoints(prev => [...prev, adcValue].slice(-100));
+        // setElapsedPoints(prev => [...prev, elapsed].slice(-100));
+        bigBuffer.current = [...bigBuffer.current, adcValue].slice(-100);
+        setSmallBuffer(bigBuffer.current.slice(-parseInt(selected) * 10))
+        // setSmallBuffer(bigBuffer.current.slice(-50))
       }
-    }, selected); 
+
+    }, 100); 
 
     return () => clearInterval(interval);
   }, [selected]); 
@@ -70,24 +78,25 @@ const Graph = () => {
 
   
   const data = [
-    {key:'1', value:'10'},
-    {key:'2', value:'50'},
-    {key:'3', value:'100'}
+    {key:'1', value:'1'},
+    {key:'2', value:'5'},
+    {key:'3', value:'10'}
   ]
 
   return (
     <View style={styles.graphContainer}>
       <SelectList 
-        setSelected={(val) => {setSelected(val)}}
+        setSelected={setSelected}
         data = {data}
         save = "value"
+        defaultOption={{key: '10', value:'10'}} // Weird workaround for SelectList library
       />
       <LineChart
         data={{
           // labels:labels,
           datasets: [
             {
-              data: dataPoints,
+              data: smallBuffer,
               color: () => 'rgba(134, 65, 244, 1)',
               strokeWidth: 2,
             },
@@ -97,7 +106,7 @@ const Graph = () => {
         height={220}
         withShadow={false}
         chartConfig={chartConfig}
-        bezier
+        // bezier
         style={styles.lineChart}
         withVerticalLabels={true}
         withHorizontalLabels={false}
