@@ -27,18 +27,18 @@ const Graph = () => {
   const  [dataPoints, setDataPoints] = useState([])
   const  [elapsedRefPoints, setElapsedPoints] = useState([])
 
-  const counterRef = useRef(0)
 
   useEffect(() => {
     setDataPoints(Array(100).fill(0));
   }, []);
   
 
+  // Refreshes the graph on a fixed time interval. 
+  // Rerun if dropdown changes
   useEffect(() => {
     const interval = setInterval(() => {
       const adcValue = adcValueRef.current;
       const elapsed = elapsedRef.current;
-      const freq = parseInt(selected) || 1;
 
       if (
         adcValue !== undefined &&
@@ -46,16 +46,13 @@ const Graph = () => {
         elapsed !== undefined &&
         elapsed !== null
       ) {
-        if (counterRef.current === 0) {
-          setDataPoints(prev => [...prev, adcValue].slice(-100));
-          setElapsedPoints(prev => [...prev, elapsed].slice(-100));
-        }
-        counterRef.current = (counterRef.current + 1) % freq;
+        setDataPoints(prev => [...prev, adcValue].slice(-100));
+        setElapsedPoints(prev => [...prev, elapsed].slice(-100));
       }
-    }, 50); // Check every 100ms (or whatever resolution you need)
+    }, 50); 
 
     return () => clearInterval(interval);
-  }, [selected]); // Rerun if dropdown frequency changes
+  }, [selected]); 
 
 
 
