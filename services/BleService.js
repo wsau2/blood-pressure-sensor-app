@@ -34,11 +34,71 @@ class BleService {
     }
 
     async requestBluetoothPermissions() {
-        // ... (permission request logic as provided before) ...
-        const granted = await /* ... permission request ... */;
-        this._updateContext({ log: `Permissions granted: ${granted}` });
-        return granted;
+        if (Platform.OS === 'android') {
+            // Android 12+ requires BLUETOOTH_SCAN and BLUETOOTH_CONNECT
+            if (Platform.Version >= 31) { // Android 12 is API 31
+                const bluetoothScanPermission = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+                    {
+                        title: "Bluetooth Scan Permission",
+                        message: "This app needs Bluetooth Scan permission to discover devices.",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+                const bluetoothConnectPermission = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+                    {
+                        title: "Bluetooth Connect Permission",
+                        message: "This app needs Bluetooth Connect permission to connect to devices.",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+                const fineLocationPermission = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                    {
+                        title: "Location Permission",
+                        message: "This app needs Location permission to discover devices.",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+
+                const granted = (bluetoothScanPermission === PermissionsAndroid.RESULTS.GRANTED &&
+                                 bluetoothConnectPermission === PermissionsAndroid.RESULTS.GRANTED &&
+                                 fineLocationPermission === PermissionsAndroid.RESULTS.GRANTED);
+                this._updateContext({ log: `Android Permissions granted: ${granted}` });
+                return granted;
+
+            } else if (Platform.Version >= 23) { // Android 6.0+ (API 23) to Android 11 (API 30)
+                const fineLocationPermission = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                    {
+                        title: "Location Permission",
+                        message: "This app needs Location permission to discover devices.",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+                const granted = (fineLocationPermission === PermissionsAndroid.RESULTS.GRANTED);
+                this._updateContext({ log: `Android Location Permission granted: ${granted}` });
+                return granted;
+            }
+        }
+        // For iOS, Bluetooth permissions are handled automatically by the system
+        // when you access Bluetooth functions for the first time, provided
+        // you have the NSCameraUsageDescription and NSBluetoothPeripheralUsageDescription
+        // (or NSBluetoothAlwaysUsageDescription for iOS 13+) in your Info.plist.
+        // So, no explicit permission request here for iOS.
+        this._updateContext({ log: `iOS permissions assumed granted or not needed by app logic.` });
+        return true; // Assume permissions are handled or not strictly required by app logic for iOS
     }
+
 
     scanForDevice() {
         this._updateContext({ log: "Starting device scan..." });

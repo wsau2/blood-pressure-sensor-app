@@ -20,7 +20,14 @@ const chartConfig = {
 };
 
 const Graph = () => {
-  const { dataPoints, elapsed } = useContext(DataContext);
+  // Correctly destructure 'state' from the context first
+  const { state } = useContext(DataContext);
+
+  // Then destructure 'dataPoints' and 'elapsed' from the 'state' object
+  const { dataPoints, elapsed } = state; // <-- FIX IS HERE
+
+  // Add a defensive check for dataPoints being an array
+  const chartData = dataPoints && dataPoints.length > 0 ? dataPoints : [0]; // Provide a default if no data
 
   return (
     <View style={styles.graphContainer}>
@@ -28,7 +35,8 @@ const Graph = () => {
         data={{
           datasets: [
             {
-              data: dataPoints,
+              // Use the chartData here
+              data: chartData, // Use chartData to ensure it's an array
               color: () => 'rgba(134, 65, 244, 1)',
               strokeWidth: 2,
             },
@@ -46,9 +54,8 @@ const Graph = () => {
         withInnerLines={true}
         segments={4}
         withVerticalLines={false}
-
       />
-      <Text>{ elapsed }</Text>
+      <Text>{elapsed}</Text>
     </View>
   );
 };

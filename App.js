@@ -1,7 +1,7 @@
 // MyBloodPressureApp/App.js - REVISED
 
 import React, { useEffect, useState, useRef } from 'react';
-import { SafeAreaView, StyleSheet, Platform, View, Text, Button } from 'react-native'; // Added Button, View, Text for BLE controls
+import { SafeAreaView, StyleSheet, Platform, View, Text, Button, ScrollView } from 'react-native'; // Added Button, View, Text for BLE controls
 
 import Home from './pages/Home';
 import Results from './pages/Results'; // Assuming Results is your main display screen
@@ -10,7 +10,7 @@ import ControlPanel from './components/ControlPanel';
 
 // NEW IMPORTS FOR BLE
 import { DataProvider, useData } from './contexts/DataContext';
-import { bleService } from './services/BLEservice';
+import { bleService } from './services/BleService';
 
 // This is the main application component that orchestrates everything
 function AppContent() { // Renamed to AppContent as App will be a wrapper
