@@ -1,24 +1,27 @@
 import { useEffect } from 'react';
 import { connectWebSocket, sendMessage } from './webSocketService';
+import { Platform } from 'react-native';
 
 const KeyboardListener = () => {
   useEffect(() => {
     connectWebSocket();
 
-    const handleKeyDown = (event) => {
-      const key = event.key;
-      sendMessage(key);
-      console.log(key);
-    };
+    if (Platform.OS === 'web') {
+      const handleKeyDown = (event) => {
+        const key = event.key;
+        sendMessage(key);
+        console.log(key);
+      };
 
-    window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown);
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
   }, []);
 
   return null; // No UI needed
 };
 
-export default KeyboardListener; 
+export default KeyboardListener;

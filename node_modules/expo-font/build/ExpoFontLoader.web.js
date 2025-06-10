@@ -92,6 +92,13 @@ export default {
     resetServerContext() {
         serverContext.clear();
     },
+    getLoadedFonts() {
+        if (typeof window === 'undefined') {
+            return [...serverContext.values()].map(({ name }) => name);
+        }
+        const rules = getFontFaceRules();
+        return rules.map(({ rule }) => rule.style.fontFamily);
+    },
     isLoaded(fontFamilyName, resource = {}) {
         if (typeof window === 'undefined') {
             return !![...serverContext.values()].find((asset) => {
@@ -124,7 +131,10 @@ export default {
         if (!isFontLoadingListenerSupported()) {
             return Promise.resolve();
         }
-        return new FontObserver(fontFamilyName, { display: resource.display }).load(null, 6000);
+        return new FontObserver(fontFamilyName, {
+            // @ts-expect-error: TODO(@kitten): Typings indicate that the polyfill may not support this?
+            display: resource.display,
+        }).load(null, 6000);
     },
 };
 const ID = 'expo-generated-fonts';

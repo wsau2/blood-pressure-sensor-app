@@ -60,10 +60,9 @@ using namespace facebook::react;
   const auto &newSwitchProps = static_cast<const SwitchProps &>(*props);
 
   // `value`
-  if (oldSwitchProps.value != newSwitchProps.value) {
+  if (!_isInitialValueSet || oldSwitchProps.value != newSwitchProps.value) {
     BOOL shouldAnimate = _isInitialValueSet == YES;
     [_switchView setOn:newSwitchProps.value animated:shouldAnimate];
-    _isInitialValueSet = YES;
   }
 
   // `disabled`
@@ -85,6 +84,8 @@ using namespace facebook::react;
   if (oldSwitchProps.thumbTintColor != newSwitchProps.thumbTintColor) {
     _switchView.thumbTintColor = RCTUIColorFromSharedColor(newSwitchProps.thumbTintColor);
   }
+
+  _isInitialValueSet = YES;
 
   [super updateProps:props oldProps:oldProps];
 }
