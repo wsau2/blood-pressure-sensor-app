@@ -8,23 +8,24 @@
  * @flow
  */
 
+import type {ViewStyleProp} from '../StyleSheet/StyleSheet';
 import type {RootTag} from './RootTag';
 
 import * as React from 'react';
 
-export type Props = $ReadOnly<{|
+export type Props = $ReadOnly<{
   children?: React.Node,
   fabric?: boolean,
   rootTag: number | RootTag,
   initialProps?: {...},
-  showArchitectureIndicator?: boolean,
   WrapperComponent?: ?React.ComponentType<any>,
+  rootViewStyle?: ?ViewStyleProp,
   internal_excludeLogBox?: boolean,
   internal_excludeInspector?: boolean,
-|}>;
+}>;
 
-const AppContainer: React.AbstractComponent<Props> = __DEV__
+const AppContainer: component(...Props) = __DEV__
   ? require('./AppContainer-dev').default
   : require('./AppContainer-prod').default;
 
-module.exports = AppContainer;
+export default AppContainer;

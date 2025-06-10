@@ -25,20 +25,25 @@ const Graph = () => {
 
   const  [selected, setSelected] = useState("")
   const  [dataPoints, setDataPoints] = useState([])
-  const  [elapsedRefPoints, setElapsedPoints] = useState([])
+  const  [elapsedPoints, setElapsedPoints] = useState([])
 
-  const counterRef = useRef(0)
+  // console.log("graph render")
+
+  const bigBuffer = useRef([]);
+  const [smallBuffer, setSmallBuffer] = useState([]);
+
 
   useEffect(() => {
     setDataPoints(Array(100).fill(0));
   }, []);
   
 
+  // Every 100 ms, receives an adc from App and adds it to the big buffer
   useEffect(() => {
+    console.log("graph set to ", selected)
     const interval = setInterval(() => {
       const adcValue = adcValueRef.current;
       const elapsed = elapsedRef.current;
-      const freq = parseInt(selected) || 1;
 
       if (
         adcValue !== undefined &&
@@ -46,28 +51,34 @@ const Graph = () => {
         elapsed !== undefined &&
         elapsed !== null
       ) {
-        if (counterRef.current === 0) {
-          setDataPoints(prev => [...prev, adcValue].slice(-100));
-          setElapsedPoints(prev => [...prev, elapsed].slice(-100));
-        }
-        counterRef.current = (counterRef.current + 1) % freq;
+        // Big buffer stores last 100 values
+        bigBuffer.current = [...bigBuffer.current, adcValue].slice(-100);
+
+        // Store the last 
+        const windowSize = -parseInt(selected) * 10
+        setSmallBuffer(bigBuffer.current.slice(windowSize))
+        setElapsedPoints(prev => [...prev, elapsed].slice(windowSize));
       }
-    }, 50); // Check every 100ms (or whatever resolution you need)
+
+    }, 100); 
 
     return () => clearInterval(interval);
-  }, [selected]); // Rerun if dropdown frequency changes
+  }, [selected]); 
 
 
 
-  // let labels = [];
-  // const n = elapsedRefPoints.length;
-  // let labels = new Array(n)
-  // if (n > 0) {
-  //   // labels = Array(n).fill("");
-  //   labels[0] = (elapsedRefPoints[0] / 1000).toFixed(1);
-  //   labels[Math.floor(n / 2)] = (elapsedRefPoints[Math.floor(n / 2)] / 1000).toFixed(1);
-  //   labels[n - 5] = (elapsedRefPoints[n - 1] / 1000).toFixed(1);
-  // }
+  // Compute labels based on elapsedPoints
+  let leftLabel = '';
+  let midLabel = '';
+  let rightLabel = '';
+  const n = elapsedPoints.length;
+  if (n > 0) {
+    leftLabel = (elapsedPoints[0] / 1000).toFixed(1);
+    midLabel = (elapsedPoints[Math.floor(n / 2)] / 1000).toFixed(1);
+    rightLabel = (elapsedPoints[n - 1] / 1000).toFixed(1);
+  }
+  // // console.log(elapsedPoints)
+  const labels = [1, 2, 3]
 
 
   
@@ -79,17 +90,21 @@ const Graph = () => {
 
   return (
     <View style={styles.graphContainer}>
-      <SelectList 
-        setSelected={(val) => {setSelected(val)}}
-        data = {data}
-        save = "value"
-      />
+      <View style={styles.selectContainer}>
+        <Text>Window size (seconds): </Text>
+        <SelectList 
+          setSelected={setSelected}
+          data={data}
+          save="value"
+          defaultOption={{key: '10', value:'10'}}
+        />
+      </View>
       <LineChart
         data={{
-          // labels:labels,
+          // labels: labels, // (optional, for chart x-axis)
           datasets: [
             {
-              data: dataPoints,
+              data: smallBuffer,
               color: () => 'rgba(134, 65, 244, 1)',
               strokeWidth: 2,
             },
@@ -99,7 +114,6 @@ const Graph = () => {
         height={220}
         withShadow={false}
         chartConfig={chartConfig}
-        bezier
         style={styles.lineChart}
         withVerticalLabels={true}
         withHorizontalLabels={false}
@@ -107,8 +121,12 @@ const Graph = () => {
         withInnerLines={true}
         segments={4}
         withVerticalLines={false}
-
       />
+      <View style={styles.labels}>
+        <Text style={{ fontSize: 14 }}>{leftLabel}</Text>
+        <Text style={{ fontSize: 14 }}>{midLabel}</Text>
+        <Text style={{ fontSize: 14 }}>{rightLabel}</Text>
+      </View>
     </View>
   );
 };
@@ -129,6 +147,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',     // Center the chart within the container
     marginLeft: -50         // adjust left for invisible y axis labels 
   },
+  selectContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  labels: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  }
 });
 
 export default Graph;

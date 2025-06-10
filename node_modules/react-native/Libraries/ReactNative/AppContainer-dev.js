@@ -33,7 +33,8 @@ const reactDevToolsHook: ReactDevToolsGlobalHook =
 // Required for React DevTools to view / edit React Native styles in Flipper.
 // Flipper doesn't inject these values when initializing DevTools.
 if (reactDevToolsHook) {
-  reactDevToolsHook.resolveRNStyle = require('../StyleSheet/flattenStyle');
+  reactDevToolsHook.resolveRNStyle =
+    require('../StyleSheet/flattenStyle').default;
   reactDevToolsHook.nativeStyleEditorValidAttributes = Object.keys(
     ReactNativeStyleAttributes,
   );
@@ -52,7 +53,7 @@ const InspectorDeferred = ({
 }: InspectorDeferredProps) => {
   // D39382967 adds a require cycle: InitializeCore -> AppContainer -> Inspector -> InspectorPanel -> ScrollView -> InitializeCore
   // We can't remove it yet, fallback to dynamic require for now. This is the only reason why this logic is in a separate function.
-  const Inspector = require('../Inspector/Inspector');
+  const Inspector = require('../../src/private/inspector/Inspector').default;
 
   return (
     <Inspector
@@ -73,7 +74,7 @@ const ReactDevToolsOverlayDeferred = ({
   reactDevToolsAgent,
 }: ReactDevToolsOverlayDeferredProps) => {
   const ReactDevToolsOverlay =
-    require('../Inspector/ReactDevToolsOverlay').default;
+    require('../../src/private/inspector/ReactDevToolsOverlay').default;
 
   return (
     <ReactDevToolsOverlay
@@ -90,8 +91,8 @@ const AppContainer = ({
   internal_excludeInspector = false,
   internal_excludeLogBox = false,
   rootTag,
-  showArchitectureIndicator,
   WrapperComponent,
+  rootViewStyle,
 }: Props): React.Node => {
   const appContainerRootViewRef: AppContainerRootViewRef = React.useRef(null);
   const innerViewRef: InspectedViewRef = React.useRef(null);
@@ -141,7 +142,7 @@ const AppContainer = ({
       collapsable={reactDevToolsAgent == null && !shouldRenderInspector}
       pointerEvents="box-none"
       key={key}
-      style={styles.container}
+      style={rootViewStyle || styles.container}
       ref={innerViewRef}>
       {children}
     </View>
@@ -149,10 +150,7 @@ const AppContainer = ({
 
   if (WrapperComponent != null) {
     innerView = (
-      <WrapperComponent
-        initialProps={initialProps}
-        fabric={fabric === true}
-        showArchitectureIndicator={showArchitectureIndicator === true}>
+      <WrapperComponent initialProps={initialProps} fabric={fabric === true}>
         {innerView}
       </WrapperComponent>
     );
@@ -167,7 +165,7 @@ const AppContainer = ({
     <RootTagContext.Provider value={createRootTag(rootTag)}>
       <View
         ref={appContainerRootViewRef}
-        style={styles.container}
+        style={rootViewStyle || styles.container}
         pointerEvents="box-none">
         {innerView}
 

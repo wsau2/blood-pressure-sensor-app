@@ -9,6 +9,11 @@ export type AssetDescriptor = {
 };
 export { AssetMetadata };
 /**
+ * Android resource URL prefix.
+ * @hidden
+ */
+export declare const ANDROID_EMBEDDED_URL_BASE_RESOURCE = "file:///android_res/";
+/**
  * The `Asset` class represents an asset in your app. It gives metadata about the asset (such as its
  * name and type) and provides facilities to load the asset data.
  */
@@ -34,7 +39,7 @@ export declare class Asset {
      * asset. When running the app from Expo CLI during development, this URI points to Expo CLI's
      * server running on your computer and the asset is served directly from your computer. If you
      * are not using Classic Updates (legacy), this field should be ignored as we ensure your assets
-     * are on device before before running your application logic.
+     * are on device before running your application logic.
      */
     readonly uri: string;
     /**
@@ -76,7 +81,11 @@ export declare class Asset {
      * network URL
      * @return The [`Asset`](#asset) instance for the asset.
      */
-    static fromModule(virtualAssetModule: number | string): Asset;
+    static fromModule(virtualAssetModule: number | string | {
+        uri: string;
+        width: number;
+        height: number;
+    }): Asset;
     static fromMetadata(meta: AssetMetadata): Asset;
     static fromURI(uri: string): Asset;
     /**
