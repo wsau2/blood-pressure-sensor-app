@@ -4,6 +4,8 @@ import Home from './pages/Home';
 import Results from './pages/Results';
 import KeyboardListener from './components/KeyboardListener';
 import ControlPanel from './components/ControlPanel';
+import getBloodPressure from './components/getBloodPressure';
+
 import {
   connectWebSocket,
   addMessageListener,
@@ -57,9 +59,10 @@ export default function App() {
           recording.current = false;
           recording.current = false;
           setShowHome(false)
-          if (adcRecordingsRef.current.length > 0) {
-            console.log('ADC Buffer:', adcRecordingsRef.current);
-          }
+          // if (adcRecordingsRef.current.length > 0) {
+          //   console.log('ADC Buffer:', adcRecordingsRef.current);
+          // }
+          getBloodPressure(adcRecordingsRef.current);
         }
 
         lastIndex = messageRegex.lastIndex;
