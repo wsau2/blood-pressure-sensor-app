@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
+    "biquadjs": "^1.1.0",
     "expo": "^53.0.11",
     "expo-status-bar": "~2.2.3",
     "i": "^0.3.7",
+    "ml-savitzky-golay": "^5.0.0",
     "ml-spectra-processing": "^14.12.0",
     "npm": "^11.4.1",
     "react": "19.0.0",
