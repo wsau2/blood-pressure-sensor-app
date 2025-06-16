@@ -39,6 +39,10 @@ const Graph = () => {
   
 
   // Every 100 ms, receives an adc from App and adds it to the big buffer
+  // [window size (s)] = [buffer size] * [refresh interval (ms)]
+  // ex. if we want a window size of 10 seconds that refreshes at 50 ms, the
+  // buffer would need to hold the last 200 points
+
   useEffect(() => {
     console.log("graph set to ", selected)
     const interval = setInterval(() => {
@@ -51,16 +55,23 @@ const Graph = () => {
         elapsed !== undefined &&
         elapsed !== null
       ) {
-        // Big buffer stores last 100 values
-        bigBuffer.current = [...bigBuffer.current, adcValue].slice(-100);
+        // Big buffer stores last 200 values
+        bigBuffer.current = [...bigBuffer.current, adcValue].slice(-200);
 
-        // Store the last 
-        const windowSize = -parseInt(selected) * 10
-        setSmallBuffer(bigBuffer.current.slice(windowSize))
-        setElapsedPoints(prev => [...prev, elapsed].slice(windowSize));
+        const windowPointsMap = {
+          '10': 200,
+          '5': 100,
+          '1': 20,
+        };
+        const windowSize = windowPointsMap[selected] || 200; // Default to 10s if not selected
+
+        // console.log(windowSize)
+
+        setSmallBuffer(bigBuffer.current.slice(-windowSize))
+        setElapsedPoints(prev => [...prev, elapsed].slice(-windowSize));
       }
 
-    }, 100); 
+    }, 50); 
 
     return () => clearInterval(interval);
   }, [selected]); 

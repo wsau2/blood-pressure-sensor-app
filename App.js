@@ -4,23 +4,28 @@ import Home from './pages/Home';
 import Results from './pages/Results';
 import KeyboardListener from './components/KeyboardListener';
 import ControlPanel from './components/ControlPanel';
+import getBloodPressure from './components/getBloodPressure';
+
 import {
   connectWebSocket,
   addMessageListener,
   removeMessageListener,
 } from './components/webSocketService';
 import { DataContext } from './contexts/DataContext';
+import ResultGraph from './components/ResultGraph';
 
 export default function App() {
   console.log("app renders")
 
-  const recording = useRef(false);
+  const isRecording = useRef(false);
   const waitingForStalled = useRef(false);
   const [showHome, setShowHome] = useState(false);
   const adcValueRef = useRef(null);
   const elapsedRef = useRef(null)
-  const adcRecordingsRef = useRef([])
+  const recordingArr = useRef([])
   const adcBufferRef = useRef('');
+
+  const processedData = useRef([]);
 
   useEffect(() => {
     connectWebSocket();
@@ -34,32 +39,33 @@ export default function App() {
       let lastIndex = 0;
 
       while ((match = messageRegex.exec(adcBufferRef.current)) !== null) {
-        adcValueRef.current = parseInt(match[1], 10);
+        adcValueRef.current = parseInt(match[1], 10) * (Math.random() * 0.2 + 0.9);
         elapsedRef.current = match[2];
         const status = match[3];
 
         // If recording in progress, record non-null adc values in adcBuffer
-        if (recording.current) {
-          adcRecordingsRef.current.push(adcValueRef.current)
+        if (isRecording.current) {
+          recordingArr.current.push(adcValueRef.current)
         }
 
         // Handle STALLED → start recording
         if (waitingForStalled.current && status === 'STALLED') {
           console.log("Stalled -- start recording")
           waitingForStalled.current = false;
-          recording.current = true;
-          adcRecordingsRef.current = []
+          isRecording.current = true;
+          recordingArr.current = []
         }
 
         // Handle IDLE → stop recording and show result
-        if (recording.current && status === 'IDLE') {
+        if (isRecording.current && status === 'IDLE') {
           console.log("IDLE -- stop recording")
-          recording.current = false;
-          recording.current = false;
+          isRecording.current = false;
+          isRecording.current = false;
           setShowHome(false)
-          if (adcRecordingsRef.current.length > 0) {
-            console.log('ADC Buffer:', adcRecordingsRef.current);
-          }
+          // if (recordingArr.current.length > 0) {
+          //   console.log('ADC Buffer:', recordingArr.current);
+          // }
+          processedData.current = getBloodPressure(recordingArr.current);
         }
 
         lastIndex = messageRegex.lastIndex;
@@ -74,23 +80,24 @@ export default function App() {
     return () => {
       removeMessageListener(handleMessage);
     };
-  }, [showHome, adcRecordingsRef]);
+  }, [showHome, recordingArr]);
 
   const handleControlPanelPress = (key) => {
     if (key === 'j') {
       console.log('Waiting for STALLED status...');
       setShowHome(true)
       waitingForStalled.current = true;
-      recording.current = false;
-      adcRecordingsRef.current = []
+      isRecording.current = false;
+      recordingArr.current = []
     }
   };
 
   return (
-    <DataContext.Provider value={{adcValueRef, elapsedRef, recording, adcRecordingsRef}}>
+    <DataContext.Provider value={{adcValueRef, elapsedRef, isRecording, recordingArr, processedData}}>
       <SafeAreaView style={styles.container}>
         <Results />
         <ControlPanel onButtonPress={handleControlPanelPress} />
+        {/* <ResultGraph/> */}
         <Home visible={showHome} />
         <KeyboardListener />
       </SafeAreaView>
