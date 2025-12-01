@@ -1,16 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet, Alert } from 'react-native';
 import Home from './pages/Home';
 import Results from './pages/Results';
 import KeyboardListener from './components/KeyboardListener';
 import ControlPanel from './components/ControlPanel';
 import getBloodPressure from './components/getBloodPressure';
-
-import {
-  connectWebSocket,
-  addMessageListener,
-  removeMessageListener,
-} from './components/webSocketService';
+import { bleService } from './components/bleService';
 import { DataContext } from './contexts/DataContext';
 import ResultGraph from './components/ResultGraph';
 
@@ -28,7 +23,17 @@ export default function App() {
   const processedData = useRef([]);
 
   useEffect(() => {
-    connectWebSocket();
+    const connectBLE = async () => {
+      try {
+        await bleService.connect();
+        console.log('BLE Connected successfully');
+      } catch (error) {
+        console.error('BLE Connection failed:', error);
+        Alert.alert('Connection Error', 'Failed to connect to the blood pressure sensor. Please make sure it is turned on and nearby.');
+      }
+    };
+
+    connectBLE();
 
     const handleMessage = (data) => {
       adcBufferRef.current += data;
@@ -60,11 +65,7 @@ export default function App() {
         if (isRecording.current && status === 'IDLE') {
           console.log("IDLE -- stop recording")
           isRecording.current = false;
-          isRecording.current = false;
           setShowHome(false)
-          // if (recordingArr.current.length > 0) {
-          //   console.log('ADC Buffer:', recordingArr.current);
-          // }
           processedData.current = getBloodPressure(recordingArr.current);
         }
 
@@ -75,10 +76,11 @@ export default function App() {
       adcBufferRef.current = adcBufferRef.current.slice(lastIndex);
     };
 
-    addMessageListener(handleMessage);
+    bleService.addMessageListener(handleMessage);
 
     return () => {
-      removeMessageListener(handleMessage);
+      bleService.removeMessageListener(handleMessage);
+      bleService.disconnect();
     };
   }, [showHome, recordingArr]);
 
@@ -97,7 +99,6 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <Results />
         <ControlPanel onButtonPress={handleControlPanelPress} />
-        {/* <ResultGraph/> */}
         <Home visible={showHome} />
         <KeyboardListener />
       </SafeAreaView>
